@@ -293,7 +293,12 @@ else
 	red "================================"
 fi
 }
-
+function bbr_boost_sh(){
+    red "================================"
+    red "跳转到4 IN 1 BBR加速 一键安装脚本"
+    red "================================"
+    bash <(curl -L -s -k "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh")
+}
 function remove_trojan(){
     red "================================"
     red "即将卸载trojan"
@@ -315,16 +320,19 @@ function remove_trojan(){
 }
 start_menu(){
     clear
-    green " ===================================="
-    green " Trojan 一键安装自动脚本      "
-    green " 系统：centos7+/debian9+/ubuntu16.04+"
-    green " 网站：www.v2rayssr.com （已开启禁止国内访问）              "
-    green " 脚本东拼西凑 需要感谢 秋水逸冰、Atrandys、V2ray官方等        "
-    green " Youtube：波仔分享                "
-    green " ===================================="
+    red " ===================================="
+    red " Trojan 一键安装自动脚本      "
+    red " 系统：centos7+/debian9+/ubuntu16.04+"
+    red " 网站：www.v2rayssr.com （已开启禁止国内访问）              "
+    red " 脚本东拼西凑 需要感谢 秋水逸冰、Atrandys、V2ray官方等        "
+    red " Youtube：波仔分享                "
+    red " ===================================="
     echo
-    green " 1. 安装trojan"
-    red " 2. 卸载trojan"
+    green " 1. 一键安装 Trojan"
+    green " 2. 安装 4 IN 1 BBRPLUS加速脚本"
+    green " 3. 一键卸载 Trojan"
+
+    
     blue " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
@@ -333,7 +341,10 @@ start_menu(){
     install_trojan
     ;;
     2)
-    remove_trojan 
+    bbr_boost_sh 
+    ;;
+    3)
+    remove_trojan
     ;;
     0)
     exit 1

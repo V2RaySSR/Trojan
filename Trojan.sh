@@ -153,14 +153,14 @@ EOF
     	unzip web.zip
 	systemctl restart nginx.service
 	#申请https证书
-	mkdir /usr/trojan/cert
+	mkdir /usr/src/cert
 	curl https://get.acme.sh | sh
 	~/.acme.sh/acme.sh  --issue  -d $your_domain  --webroot /home/wwwroot/web/
     	~/.acme.sh/acme.sh  --installcert  -d  $your_domain   \
-        --key-file   /usr/trojan/cert/private.key \
-        --fullchain-file /usr/trojan/cert/fullchain.cer \
+        --key-file   /usr/src/cert/private.key \
+        --fullchain-file /usr/src/cert/fullchain.cer \
         --reloadcmd  "systemctl force-reload  nginx.service"
-	if test -s /usr/trojan/cert/fullchain.cer; then
+	if test -s /usr/src/cert/fullchain.cer; then
         cd /usr/src
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
 	wget https://github.com/trojan-gfw/trojan/releases/download/v1.14.0/trojan-1.14.0-linux-amd64.tar.xz
@@ -168,9 +168,9 @@ EOF
 	#下载trojan客户端
 	wget https://github.com/V2RaySSR/Trojan/raw/master/trojan-client.zip
 	unzip trojan-client.zip
-	cp /usr/trojan/cert/fullchain.cer /usr/trojan/trojan-client/fullchain.cer
+	cp /usr/src/cert/fullchain.cer /usr/src/trojan-client/fullchain.cer
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
-	cat > /usr/trojan/trojan-client/config.json <<-EOF
+	cat > /usr/src/trojan-client/config.json <<-EOF
 {
     "run_type": "client",
     "local_addr": "127.0.0.1",
@@ -203,8 +203,8 @@ EOF
     }
 }
 EOF
-	rm -rf /usr/trojan/trojan/server.conf
-	cat > /usr/trojan/trojan/server.conf <<-EOF
+	rm -rf /usr/src/trojan/server.conf
+	cat > /usr/src/trojan/server.conf <<-EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -216,8 +216,8 @@ EOF
     ],
     "log_level": 1,
     "ssl": {
-        "cert": "/usr/trojan/cert/fullchain.cer",
-        "key": "/usr/trojan/cert/private.key",
+        "cert": "/usr/src/cert/fullchain.cer",
+        "key": "/usr/src/cert/private.key",
         "key_password": "",
         "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
 	"prefer_server_cipher": true,
@@ -247,11 +247,11 @@ EOF
     }
 }
 EOF
-	cd /usr/trojan/trojan-client/
-	zip -q -r trojan-client.zip /usr/trojan/trojan-client/
+	cd /usr/src/trojan-client/
+	zip -q -r trojan-client.zip /usr/src/trojan-client/
 	trojan_path=$(cat /dev/urandom | head -1 | md5sum | head -c 16)
 	mkdir /home/wwwroot/web/${trojan_path}
-	mv /usr/trojan/trojan-client/trojan-client.zip /home/wwwroot/web/${trojan_path}/
+	mv /usr/src/trojan-client/trojan-client.zip /home/wwwroot/web/${trojan_path}/
 	#增加启动脚本
 	
 cat > ${systempwd}trojan.service <<-EOF
@@ -261,10 +261,10 @@ After=network.target
    
 [Service]  
 Type=simple  
-PIDFile=/usr/trojan/trojan/trojan/trojan.pid
-ExecStart=/usr/trojan/trojan/trojan -c "/usr/trojan/trojan/server.conf"  
+PIDFile=/usr/src/trojan/trojan/trojan.pid
+ExecStart=/usr/src/trojan/trojan -c "/usr/src/trojan/server.conf"  
 ExecReload=  
-ExecStop=/usr/trojan/trojan/trojan  
+ExecStop=/usr/src/trojan/trojan  
 PrivateTmp=true  
    
 [Install]  
@@ -310,7 +310,7 @@ function remove_trojan(){
     else
         apt autoremove -y nginx
     fi
-    rm -rf /usr/trojan/trojan*
+    rm -rf /usr/src/trojan*
     rm -rf /home/wwwroot/web/*
     green "=============="
     green "Trojan 删除完毕"

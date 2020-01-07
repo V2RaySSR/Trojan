@@ -147,7 +147,7 @@ EOF
 	#设置伪装站
 	rm -rf /home/wwwroot/web/*
 	cd /home/wwwroot/web/
-	wget https://github.com/atrandys/v2ray-ws-tls/raw/master/web.zip
+	wget https://github.com/V2RaySSR/Trojan/raw/master/web.zip
     	unzip web.zip
 	systemctl restart nginx.service
 	#申请https证书

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #fonts color
-Yellow(){
+yellow(){
     echo -e "\033[33m\033[01m$1\033[0m"
 }
 green(){

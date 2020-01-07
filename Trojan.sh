@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #fonts color
 yellow(){
     echo -e "\033[33m\033[01m$1\033[0m"
@@ -9,6 +10,8 @@ green(){
 red(){
     echo -e "\033[31m\033[01m$1\033[0m"
 }
+
+#copy from 秋水逸冰 ss scripts
 if [[ -f /etc/redhat-release ]]; then
     release="centos"
     systemPackage="yum"
@@ -105,17 +108,14 @@ fi
 $systemPackage -y install  nginx wget unzip zip curl tar >/dev/null 2>&1
 systemctl enable nginx.service
 green "======================="
-green "请输入已经绑定到本VPS的域名"
-green "推荐大家使用绑定的二级域名"
-green "脚本会判断域名解析是否生效"
-green "请等待域名生效后输入域名继续"
+yellow "请输入绑定到本VPS的域名"
 green "======================="
 read your_domain
 real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
 local_addr=`curl ipv4.icanhazip.com`
 if [ $real_addr == $local_addr ] ; then
 	green "=========================================="
-	green "       域名解析正常，开始安装 Trojan、Nginx 程序"
+	green "       域名解析正常，开始安装trojan"
 	green "=========================================="
 	sleep 1s
 cat > /etc/nginx/nginx.conf <<-EOF
@@ -141,36 +141,36 @@ http {
     server {
         listen       80;
         server_name  $your_domain;
-        root /home/wwwroot/web;
+        root /usr/share/nginx/html;
         index index.php index.html index.htm;
     }
 }
 EOF
 	#设置伪装站
-	rm -rf /home/wwwroot/web/*
-	cd /home/wwwroot/web/
-	wget https://github.com/V2RaySSR/Trojan/raw/master/web.zip
+	rm -rf /usr/share/nginx/html/*
+	cd /usr/share/nginx/html/
+	wget https://github.com/atrandys/v2ray-ws-tls/raw/master/web.zip
     	unzip web.zip
 	systemctl restart nginx.service
 	#申请https证书
-	mkdir /usr/src/cert
+	mkdir /usr/src/trojan-cert
 	curl https://get.acme.sh | sh
-	~/.acme.sh/acme.sh  --issue  -d $your_domain  --webroot /home/wwwroot/web/
+	~/.acme.sh/acme.sh  --issue  -d $your_domain  --webroot /usr/share/nginx/html/
     	~/.acme.sh/acme.sh  --installcert  -d  $your_domain   \
-        --key-file   /usr/src/cert/private.key \
-        --fullchain-file /usr/src/cert/fullchain.cer \
+        --key-file   /usr/src/trojan-cert/private.key \
+        --fullchain-file /usr/src/trojan-cert/fullchain.cer \
         --reloadcmd  "systemctl force-reload  nginx.service"
-	if test -s /usr/src/cert/fullchain.cer; then
+	if test -s /usr/src/trojan-cert/fullchain.cer; then
         cd /usr/src
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
 	wget https://github.com/trojan-gfw/trojan/releases/download/v1.14.0/trojan-1.14.0-linux-amd64.tar.xz
 	tar xf trojan-1.*
 	#下载trojan客户端
-	wget https://github.com/V2RaySSR/Trojan/raw/master/trojan-client.zip
-	unzip trojan-client.zip
-	cp /usr/src/cert/fullchain.cer /usr/src/trojan-client/fullchain.cer
+	wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
+	unzip trojan-cli.zip
+	cp /usr/src/trojan-cert/fullchain.cer /usr/src/trojan-cli/fullchain.cer
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
-	cat > /usr/src/trojan-client/config.json <<-EOF
+	cat > /usr/src/trojan-cli/config.json <<-EOF
 {
     "run_type": "client",
     "local_addr": "127.0.0.1",
@@ -216,8 +216,8 @@ EOF
     ],
     "log_level": 1,
     "ssl": {
-        "cert": "/usr/src/cert/fullchain.cer",
-        "key": "/usr/src/cert/private.key",
+        "cert": "/usr/src/trojan-cert/fullchain.cer",
+        "key": "/usr/src/trojan-cert/private.key",
         "key_password": "",
         "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
 	"prefer_server_cipher": true,
@@ -247,11 +247,11 @@ EOF
     }
 }
 EOF
-	cd /usr/src/trojan-client/
-	zip -q -r trojan-client.zip /usr/src/trojan-client/
+	cd /usr/src/trojan-cli/
+	zip -q -r trojan-cli.zip /usr/src/trojan-cli/
 	trojan_path=$(cat /dev/urandom | head -1 | md5sum | head -c 16)
-	mkdir /home/wwwroot/web/${trojan_path}
-	mv /usr/src/trojan-client/trojan-client.zip /home/wwwroot/web/${trojan_path}/
+	mkdir /usr/share/nginx/html/${trojan_path}
+	mv /usr/src/trojan-cli/trojan-cli.zip /usr/share/nginx/html/${trojan_path}/
 	#增加启动脚本
 	
 cat > ${systempwd}trojan.service <<-EOF
@@ -275,13 +275,12 @@ EOF
 	systemctl start trojan.service
 	systemctl enable trojan.service
 	green "======================================================================"
-	green "Trojan已安装完成，请使用以下链接下载 Trojan 客户端，此客户端已配置好所有参数"
-	green "1、复制下面的链接，下载客户端"
-	yellow "http://${your_domain}/$trojan_path/trojan-client.zip"
-	green "2、将下载的压缩包解压，打开文件夹，打开 start.ba 即打开并运行 Trojan客户端"
+	green "Trojan已安装完成，请使用以下链接下载trojan客户端，此客户端已配置好所有参数"
+	green "1、复制下面的链接，在浏览器打开，下载客户端"
+	yellow "http://${your_domain}/$trojan_path/trojan-cli.zip"
+	green "2、将下载的压缩包解压，打开文件夹，打开start.bat即打开并运行Trojan客户端"
 	green "3、打开stop.bat即关闭Trojan客户端"
-	green "4、Trojan客户端需要搭配浏览器插件使用"
-	yellow "若是不懂怎么使用，请访问 https://www.v2rayssr.com/trojan-1.html "
+	green "4、Trojan客户端需要搭配浏览器插件使用，例如switchyomega等"
 	green "======================================================================"
 	else
         red "================================"
@@ -299,8 +298,8 @@ fi
 
 function remove_trojan(){
     red "================================"
-    red "即将卸载 Trojan"
-    red "同时卸载安装的 Nginx"
+    red "即将卸载trojan"
+    red "同时卸载安装的nginx"
     red "================================"
     systemctl stop trojan
     systemctl disable trojan
@@ -311,18 +310,23 @@ function remove_trojan(){
         apt autoremove -y nginx
     fi
     rm -rf /usr/src/trojan*
-    rm -rf /home/wwwroot/web/*
+    rm -rf /usr/share/nginx/html/*
     green "=============="
-    green "Trojan 删除完毕"
+    green "trojan删除完毕"
     green "=============="
 }
+
+function bbr_boost_sh(){
+    bash <(curl -L -s -k "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh")
+}
+
 start_menu(){
     clear
     green " ===================================="
     green " Trojan 一键安装自动脚本      "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
     green " 网站：www.v2rayssr.com （已开启禁止国内访问）              "
-    green " 脚本东拼西凑 "
+    green " 此脚本为 atrandys 的，波仔集成了BBRPLUS加速 "
     green " Youtube：波仔分享                "
     green " ===================================="
     echo

@@ -286,8 +286,8 @@ EOF
 	yellow "4、Trojan客户端需要搭配浏览器插件使用，例如switchyomega等"
 	yellow "======================================================================"
 	else
-        red "================================"
-	red "https证书没有申请成果，本次安装失败"
+    red "================================"
+	red "https 证书没有申请成功，本次安装失败"
 	red "================================"
 	fi
 	
@@ -306,8 +306,8 @@ function bbr_boost_sh(){
 }
 function remove_trojan(){
     red "================================"
-    red "即将卸载trojan"
-    red "同时卸载安装的nginx"
+    red "开始卸载Trojan"
+    red "同时卸载安装的Trojan"
     red "================================"
     systemctl stop trojan
     systemctl disable trojan
@@ -320,7 +320,7 @@ function remove_trojan(){
     rm -rf /usr/tizi/trojan*
     rm -rf /home/wwwroot/web/*
     green "=============="
-    green "trojan删除完毕"
+    green "Trojan 删除完毕"
     green "=============="
 }
 start_menu(){
@@ -329,7 +329,7 @@ start_menu(){
     green " Trojan 一键安装自动脚本      "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
     green " 网站：www.v2rayssr.com （已开启禁止国内访问）              "
-    green " 脚本东拼西凑 需要感谢 秋水逸冰、Atrandys、V2ray官方等        "
+    green " 脚本东拼西凑 "
     green " Youtube：波仔分享                "
     green " ===================================="
     echo

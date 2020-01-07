@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #fonts color
 yellow(){
     echo -e "\033[33m\033[01m$1\033[0m"
@@ -10,7 +9,6 @@ green(){
 red(){
     echo -e "\033[31m\033[01m$1\033[0m"
 }
-
 if [[ -f /etc/redhat-release ]]; then
     release="centos"
     systemPackage="yum"
@@ -155,24 +153,24 @@ EOF
     	unzip web.zip
 	systemctl restart nginx.service
 	#申请https证书
-	mkdir /usr/tizi/trojan-cert
+	mkdir /usr/trojan/cert
 	curl https://get.acme.sh | sh
 	~/.acme.sh/acme.sh  --issue  -d $your_domain  --webroot /home/wwwroot/web/
     	~/.acme.sh/acme.sh  --installcert  -d  $your_domain   \
-        --key-file   /usr/tizi/trojan-cert/private.key \
-        --fullchain-file /usr/tizi/trojan-cert/fullchain.cer \
+        --key-file   /usr/trojan/cert/private.key \
+        --fullchain-file /usr/trojan/cert/fullchain.cer \
         --reloadcmd  "systemctl force-reload  nginx.service"
-	if test -s /usr/tizi/trojan-cert/fullchain.cer; then
+	if test -s /usr/trojan/cert/fullchain.cer; then
         cd /usr/src
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
 	wget https://github.com/trojan-gfw/trojan/releases/download/v1.14.0/trojan-1.14.0-linux-amd64.tar.xz
 	tar xf trojan-1.*
 	#下载trojan客户端
-	wget https://github.com/V2RaySSR/Trojan/raw/master/trojan.zip
-	unzip trojan.zip
-	cp /usr/tizi/trojan-cert/fullchain.cer /usr/tizi/trojan-cli/fullchain.cer
+	wget https://github.com/V2RaySSR/Trojan/raw/master/trojan-client.zip
+	unzip trojan-client.zip
+	cp /usr/trojan/cert/fullchain.cer /usr/trojan/trojan-client/fullchain.cer
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
-	cat > /usr/tizi/trojan-cli/config.json <<-EOF
+	cat > /usr/trojan/trojan-client/config.json <<-EOF
 {
     "run_type": "client",
     "local_addr": "127.0.0.1",
@@ -205,8 +203,8 @@ EOF
     }
 }
 EOF
-	rm -rf /usr/tizi/trojan/server.conf
-	cat > /usr/tizi/trojan/server.conf <<-EOF
+	rm -rf /usr/trojan/trojan/server.conf
+	cat > /usr/trojan/trojan/server.conf <<-EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -218,8 +216,8 @@ EOF
     ],
     "log_level": 1,
     "ssl": {
-        "cert": "/usr/tizi/trojan-cert/fullchain.cer",
-        "key": "/usr/tizi/trojan-cert/private.key",
+        "cert": "/usr/trojan/cert/fullchain.cer",
+        "key": "/usr/trojan/cert/private.key",
         "key_password": "",
         "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
 	"prefer_server_cipher": true,
@@ -249,11 +247,11 @@ EOF
     }
 }
 EOF
-	cd /usr/tizi/trojan-cli/
-	zip -q -r trojan.zip /usr/tizi/trojan-cli/
+	cd /usr/trojan/trojan-client/
+	zip -q -r trojan-client.zip /usr/trojan/trojan-client/
 	trojan_path=$(cat /dev/urandom | head -1 | md5sum | head -c 16)
 	mkdir /home/wwwroot/web/${trojan_path}
-	mv /usr/tizi/trojan-cli/trojan.zip /home/wwwroot/web/${trojan_path}/
+	mv /usr/trojan/trojan-client/trojan-client.zip /home/wwwroot/web/${trojan_path}/
 	#增加启动脚本
 	
 cat > ${systempwd}trojan.service <<-EOF
@@ -263,10 +261,10 @@ After=network.target
    
 [Service]  
 Type=simple  
-PIDFile=/usr/tizi/trojan/trojan/trojan.pid
-ExecStart=/usr/tizi/trojan/trojan -c "/usr/tizi/trojan/server.conf"  
+PIDFile=/usr/trojan/trojan/trojan/trojan.pid
+ExecStart=/usr/trojan/trojan/trojan -c "/usr/trojan/trojan/server.conf"  
 ExecReload=  
-ExecStop=/usr/tizi/trojan/trojan  
+ExecStop=/usr/trojan/trojan/trojan  
 PrivateTmp=true  
    
 [Install]  
@@ -276,18 +274,18 @@ EOF
 	chmod +x ${systempwd}trojan.service
 	systemctl start trojan.service
 	systemctl enable trojan.service
-	
-	yellow "======================================================================"
-	yellow "Trojan已安装完成，请使用以下链接下载Trojan客户端，此客户端已配置好所有参数"
-	yellow "1、复制下面的链接，在浏览器打开，下载客户端"
-	yellow "http://${your_domain}/$trojan_path/trojan.zip"
-	yellow "2、将下载的压缩包解压，打开文件夹，打开start.bat即打开并运行Trojan客户端"
-	yellow "3、打开stop.bat即关闭Trojan客户端"
-	yellow "4、Trojan客户端需要搭配浏览器插件使用，例如switchyomega等"
-	yellow "======================================================================"
+	green "======================================================================"
+	green "Trojan已安装完成，请使用以下链接下载 Trojan 客户端，此客户端已配置好所有参数"
+	green "1、复制下面的链接，下载客户端"
+	yellow "http://${your_domain}/$trojan_path/trojan-client.zip"
+	green "2、将下载的压缩包解压，打开文件夹，打开 start.ba 即打开并运行 Trojan客户端"
+	green "3、打开stop.bat即关闭Trojan客户端"
+	green "4、Trojan客户端需要搭配浏览器插件使用"
+	yellow "若是不懂怎么使用，请访问 https://www.v2rayssr.com/trojan-1.html "
+	green "======================================================================"
 	else
-    red "================================"
-	red "https 证书没有申请成功，本次安装失败"
+        red "================================"
+	red "https证书没有申请成果，本次安装失败"
 	red "================================"
 	fi
 	
@@ -298,16 +296,11 @@ else
 	red "================================"
 fi
 }
-function bbr_boost_sh(){
-    red "================================"
-    red "跳转到4 IN 1 BBR加速 一键安装脚本"
-    red "================================"
-    bash <(curl -L -s -k "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh")
-}
+
 function remove_trojan(){
     red "================================"
-    red "开始卸载Trojan"
-    red "同时卸载安装的Trojan"
+    red "即将卸载 Trojan"
+    red "同时卸载安装的 Nginx"
     red "================================"
     systemctl stop trojan
     systemctl disable trojan
@@ -317,7 +310,7 @@ function remove_trojan(){
     else
         apt autoremove -y nginx
     fi
-    rm -rf /usr/tizi/trojan*
+    rm -rf /usr/trojan/trojan*
     rm -rf /home/wwwroot/web/*
     green "=============="
     green "Trojan 删除完毕"

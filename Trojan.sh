@@ -1,12 +1,9 @@
 #!/bin/bash
 
 #fonts color
-green="\033[32m"
-red="\033[31m"
-yellow="\033[33m"
-greenBG="\033[42;37m"
-redBG="\033[41;37m"
-font="\033[0m"
+yellow(){echo -e "\033[34m\033[01m$1\033[0m"}
+green(){echo -e "\033[32m"}
+red(){echo -e "\033[31m"}
 
 if [[ -f /etc/redhat-release ]]; then
     release="centos"
@@ -273,6 +270,7 @@ EOF
 	chmod +x ${systempwd}trojan.service
 	systemctl start trojan.service
 	systemctl enable trojan.service
+	
 	yellow "======================================================================"
 	yellow "Trojan已安装完成，请使用以下链接下载Trojan客户端，此客户端已配置好所有参数"
 	yellow "1、复制下面的链接，在浏览器打开，下载客户端"
@@ -334,7 +332,7 @@ start_menu(){
     red " 3. 一键卸载 Trojan"
 
     
-    blue " 0. 退出脚本"
+    yellow " 0. 退出脚本"
     echo
     read -p "请输入数字:" num
     case "$num" in

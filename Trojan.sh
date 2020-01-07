@@ -325,20 +325,23 @@ function remove_trojan(){
 }
 start_menu(){
     clear
-    red " ===================================="
-    red " Trojan 一键安装自动脚本      "
-    red " 系统：centos7+/debian9+/ubuntu16.04+"
-    red " 网站：www.v2rayssr.com （已开启禁止国内访问）              "
-    red " 脚本东拼西凑 需要感谢 秋水逸冰、Atrandys、V2ray官方等        "
-    red " Youtube：波仔分享                "
-    red " ===================================="
+    green " ===================================="
+    green " Trojan 一键安装自动脚本      "
+    green " 系统：centos7+/debian9+/ubuntu16.04+"
+    green " 网站：www.v2rayssr.com （已开启禁止国内访问）              "
+    green " 脚本东拼西凑 需要感谢 秋水逸冰、Atrandys、V2ray官方等        "
+    green " Youtube：波仔分享                "
+    green " ===================================="
     echo
-    green " 1. 一键安装 Trojan"
-    green " 2. 安装 4 IN 1 BBRPLUS加速脚本"
-    red " 3. 一键卸载 Trojan"
-
-    
+    red " ===================================="
+    yellow " 1. 一键安装 Trojan"
+    red " ===================================="
+    yellow " 2. 安装 4 IN 1 BBRPLUS加速脚本"
+    red " ===================================="
+    yellow " 3. 一键卸载 Trojan"
+    red " ===================================="
     yellow " 0. 退出脚本"
+    red " ===================================="
     echo
     read -p "请输入数字:" num
     case "$num" in

@@ -1,15 +1,13 @@
 #!/bin/bash
 
-blue(){
-    echo -e "\033[34m\033[01m$1\033[0m"
-}
-green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
-}
-red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
-}
-#copy from 秋水逸冰 ss scripts
+#fonts color
+green="\033[32m"
+red="\033[31m"
+yellow="\033[33m"
+greenBG="\033[42;37m"
+redBG="\033[41;37m"
+font="\033[0m"
+
 if [[ -f /etc/redhat-release ]]; then
     release="centos"
     systemPackage="yum"
@@ -106,14 +104,17 @@ fi
 $systemPackage -y install  nginx wget unzip zip curl tar >/dev/null 2>&1
 systemctl enable nginx.service
 green "======================="
-blue "请输入绑定到本VPS的域名"
+green "请输入已经绑定到本VPS的域名"
+green "推荐大家使用绑定的二级域名"
+green "脚本会判断域名解析是否生效"
+green "请等待域名生效后输入域名继续"
 green "======================="
 read your_domain
 real_addr=`ping ${your_domain} -c 1 | sed '1{s/[^(]*(//;s/).*//;q}'`
 local_addr=`curl ipv4.icanhazip.com`
 if [ $real_addr == $local_addr ] ; then
 	green "=========================================="
-	green "       域名解析正常，开始安装trojan"
+	green "       域名解析正常，开始安装 Trojan、Nginx 程序"
 	green "=========================================="
 	sleep 1s
 cat > /etc/nginx/nginx.conf <<-EOF
@@ -272,14 +273,14 @@ EOF
 	chmod +x ${systempwd}trojan.service
 	systemctl start trojan.service
 	systemctl enable trojan.service
-	green "======================================================================"
-	green "Trojan已安装完成，请使用以下链接下载Trojan客户端，此客户端已配置好所有参数"
-	green "1、复制下面的链接，在浏览器打开，下载客户端"
-	blue "http://${your_domain}/$trojan_path/trojan.zip"
-	green "2、将下载的压缩包解压，打开文件夹，打开start.bat即打开并运行Trojan客户端"
-	green "3、打开stop.bat即关闭Trojan客户端"
-	green "4、Trojan客户端需要搭配浏览器插件使用，例如switchyomega等"
-	green "======================================================================"
+	yellow "======================================================================"
+	yellow "Trojan已安装完成，请使用以下链接下载Trojan客户端，此客户端已配置好所有参数"
+	yellow "1、复制下面的链接，在浏览器打开，下载客户端"
+	yellow "http://${your_domain}/$trojan_path/trojan.zip"
+	yellow "2、将下载的压缩包解压，打开文件夹，打开start.bat即打开并运行Trojan客户端"
+	yellow "3、打开stop.bat即关闭Trojan客户端"
+	yellow "4、Trojan客户端需要搭配浏览器插件使用，例如switchyomega等"
+	yellow "======================================================================"
 	else
         red "================================"
 	red "https证书没有申请成果，本次安装失败"
@@ -330,7 +331,7 @@ start_menu(){
     echo
     green " 1. 一键安装 Trojan"
     green " 2. 安装 4 IN 1 BBRPLUS加速脚本"
-    green " 3. 一键卸载 Trojan"
+    red " 3. 一键卸载 Trojan"
 
     
     blue " 0. 退出脚本"

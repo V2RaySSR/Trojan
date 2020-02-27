@@ -197,6 +197,7 @@ EOF
     #下载trojan MAC客户端
     wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-macos.zip
     unzip /usr/src/trojan-macos/trojan-${latest_version}-macos.zip -d /usr/src/trojan-macos/
+    rm -rf /usr/src/trojan-macos/trojan-${latest_version}-macos.zip
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
     #配置trojan mac
     cat > /usr/src/trojan-macos/trojan/config.json <<-EOF

@@ -185,9 +185,9 @@ EOF
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
 	wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
 	latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
-	wget /releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
+	wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
 	tar xf trojan-${latest_version}-linux-amd64.tar.xz
-	#下载trojan WIN客户端https://github.com/trojan-gfw/trojan
+	#下载trojan WIN客户端
 	wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
 	wget -P /usr/src/trojan-temp https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-win.zip
 	unzip trojan-cli.zip

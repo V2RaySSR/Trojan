@@ -185,16 +185,57 @@ EOF
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
 	wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
 	latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
-	wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
+	wget /releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
 	tar xf trojan-${latest_version}-linux-amd64.tar.xz
-	#下载trojan客户端
+	#下载trojan WIN客户端https://github.com/trojan-gfw/trojan
 	wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
 	wget -P /usr/src/trojan-temp https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-win.zip
 	unzip trojan-cli.zip
 	unzip /usr/src/trojan-temp/trojan-${latest_version}-win.zip -d /usr/src/trojan-temp/
 	cp /usr/src/trojan-cert/fullchain.cer /usr/src/trojan-cli/fullchain.cer
 	mv -f /usr/src/trojan-temp/trojan/trojan.exe /usr/src/trojan-cli/ 
+    #下载trojan MAC客户端
+    wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-macos.zip
+    unzip /usr/src/trojan-macos/trojan-${latest_version}-macos.zip -d /usr/src/trojan-macos/
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
+    #配置trojan mac
+    cat > /usr/src/trojan-macos/trojan/config.json <<-EOF
+{
+    "run_type": "client",
+    "local_addr": "127.0.0.1",
+    "local_port": 1080,
+    "remote_addr": "$your_domain",
+    "remote_port": 443,
+    "password": [
+        "$trojan_passwd"
+    ],
+    "log_level": 1,
+    "ssl": {
+        "verify": true,
+        "verify_hostname": true,
+        "cert": "",
+        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
+        "cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
+        "sni": "",
+        "alpn": [
+            "h2",
+            "http/1.1"
+        ],
+        "reuse_session": true,
+        "session_ticket": false,
+        "curves": ""
+    },
+    "tcp": {
+        "no_delay": true,
+        "keep_alive": true,
+        "reuse_port": false,
+        "fast_open": false,
+        "fast_open_qlen": 20
+    }
+}
+
+EOF
+
 	cat > /usr/src/trojan-cli/config.json <<-EOF
 {
     "run_type": "client",
@@ -272,13 +313,18 @@ EOF
     }
 }
 EOF
+    #打包WIN客户端
 	cd /usr/src/trojan-cli/
 	zip -q -r trojan-cli.zip /usr/src/trojan-cli/
 	trojan_path=$(cat /dev/urandom | head -1 | md5sum | head -c 16)
 	mkdir /usr/share/nginx/html/${trojan_path}
 	mv /usr/src/trojan-cli/trojan-cli.zip /usr/share/nginx/html/${trojan_path}/
-	#增加启动脚本
+    #打包MAC客户端
+    cd /usr/src/trojan-macos/
+    zip -q -r trojan-mac.zip /usr/src/trojan-macos/
+    mv /usr/src/trojan-macos/trojan-mac.zip /usr/share/nginx/html/${trojan_path}/
 	
+    #增加启动脚本	
 cat > ${systempwd}trojan.service <<-EOF
 [Unit]  
 Description=trojan  
@@ -302,7 +348,8 @@ EOF
 	green "======================================================================"
 	green "Trojan已安装完成，请使用以下链接下载trojan客户端，此客户端已配置好所有参数"
 	green "1、复制下面的链接，在浏览器打开，下载客户端，注意此下载链接将在1个小时后失效"
-	blue "http://${your_domain}/$trojan_path/trojan-cli.zip"
+	blue "Windows客户端下载http://${your_domain}/$trojan_path/trojan-cli.zip"
+    blue "MacOS客户端下载http://${your_domain}/$trojan_path/trojan-mac.zip"
 	green "2、将下载的压缩包解压，打开文件夹，打开start.bat即打开并运行Trojan客户端"
 	green "3、打开stop.bat即关闭Trojan客户端"
 	green "4、Trojan客户端需要搭配浏览器插件或是Scoks5工具使用，例如switchyomega等"

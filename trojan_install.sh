@@ -194,12 +194,12 @@ EOF
 	unzip /usr/src/trojan-temp/trojan-${latest_version}-win.zip -d /usr/src/trojan-temp/
 	cp /usr/src/trojan-cert/fullchain.cer /usr/src/trojan-cli/fullchain.cer
 	mv -f /usr/src/trojan-temp/trojan/trojan.exe /usr/src/trojan-cli/ 
-    #下载trojan MAC客户端
-    wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-macos.zip
-    unzip /usr/src/trojan-macos/trojan-${latest_version}-macos.zip -d /usr/src/trojan-macos/
-    rm -rf /usr/src/trojan-macos/trojan-${latest_version}-macos.zip
+        #下载trojan MAC客户端
+        wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-macos.zip
+        unzip /usr/src/trojan-macos/trojan-${latest_version}-macos.zip -d /usr/src/trojan-macos/
+        rm -rf /usr/src/trojan-macos/trojan-${latest_version}-macos.zip
 	trojan_passwd=$(cat /dev/urandom | head -1 | md5sum | head -c 8)
-    #配置trojan mac
+        #配置trojan mac
     cat > /usr/src/trojan-macos/trojan/config.json <<-EOF
 {
     "run_type": "client",
@@ -321,9 +321,9 @@ EOF
 	mkdir /usr/share/nginx/html/${trojan_path}
 	mv /usr/src/trojan-cli/trojan-cli.zip /usr/share/nginx/html/${trojan_path}/
     #打包MAC客户端
-    cd /usr/src/trojan-macos/
-    zip -q -r trojan-mac.zip /usr/src/trojan-macos/
-    mv /usr/src/trojan-macos/trojan-mac.zip /usr/share/nginx/html/${trojan_path}/
+        cd /usr/src/trojan-macos/
+        zip -q -r trojan-mac.zip /usr/src/trojan-macos/
+        mv /usr/src/trojan-macos/trojan-mac.zip /usr/share/nginx/html/${trojan_path}/
 	
     #增加启动脚本	
 cat > ${systempwd}trojan.service <<-EOF
@@ -441,7 +441,7 @@ start_menu(){
     green " Trojan 一键安装自动脚本 2020-2-27 更新      "
     green " 系统：centos7+/debian9+/ubuntu16.04+"
     green " 网站：www.v2rayssr.com （已开启禁止国内访问）"
-    green " 此脚本为 atrandys 的，波仔仅集成BBRPLUS加速 "
+    green " 此脚本为 atrandys 的，波仔集成BBRPLUS加速及MAC客户端 "
     green " Youtube：波仔分享                "
     green " ===================================="
     blue " 声明："

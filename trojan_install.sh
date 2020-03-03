@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ＃字体颜色
 blue(){
     echo -e "\033[34m\033[01m$1\033[0m"
@@ -182,7 +182,7 @@ EOF
 	if test -s /usr/src/trojan-cert/fullchain.cer; then
 	systemctl start nginx
         cd /usr/src
-	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
+	#下载trojan Linux服务端
 	wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
 	latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
 	wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz

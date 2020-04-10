@@ -183,10 +183,17 @@ EOF
 	systemctl start nginx
         cd /usr/src
 	#wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
-	wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
-	latest_version=`grep tag_name latest| awk -F '[:,"v]' '{print $6}'`
+	
+	# wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest   # 当目录文件中存在latest时，并不会下载最新的，而是会读取已存在的latest
+	
+	wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest -O latest-trojan
+	latest_version=`grep tag_name latest-trojan| awk -F '[:,"v]' '{print $6}'`
 	wget https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-linux-amd64.tar.xz
 	tar xf trojan-${latest_version}-linux-amd64.tar.xz
+	
+	# 删除文件，节省空间以及便于重装
+	rm -rf ./trojan-${latest_version}-linux-amd64.tar.xz ./latest-trojan
+	
 	#下载trojan WIN客户端
 	wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
 	wget -P /usr/src/trojan-temp https://github.com/trojan-gfw/trojan/releases/download/v${latest_version}/trojan-${latest_version}-win.zip
@@ -346,6 +353,7 @@ EOF
 	chmod +x ${systempwd}trojan.service
 	systemctl start trojan.service
 	systemctl enable trojan.service
+	systemctl restart trojan.service    # 这里  存在 start trojan.service 失败的问题，重新restart
 	green "======================================================================"
 	green "Trojan已安装完成，请使用以下链接下载trojan客户端，此客户端已配置好所有参数"
 	green "1、复制下面的链接，在浏览器打开，下载客户端"

@@ -151,7 +151,7 @@ EOF
 	cd /usr/share/nginx/html/
 	wget https://github.com/V2RaySSR/Trojan/raw/master/web.zip
     	unzip web.zip
-	systemctl restart nginx.service
+	/etc/init.d/nginx restart
 	#申请https证书
 	mkdir /usr/src/trojan-cert
 	curl https://get.acme.sh | sh

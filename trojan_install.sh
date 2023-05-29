@@ -41,6 +41,7 @@ elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
 fi
 
 function install_trojan(){
+curl  https://get.acme.sh | sh -s email=xxxyyy@hotmail.com
 systemctl stop nginx
 $systemPackage -y install net-tools socat
 Port80=`netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80`
@@ -168,7 +169,7 @@ EOF
 	#设置伪装站
 	rm -rf /usr/share/nginx/html/*
 	cd /usr/share/nginx/html/
-	wget https://github.com/V2RaySSR/Trojan/raw/master/web.zip
+	wget https://github.com/HEI201/Trojan-fork/raw/master/web.zip
     	unzip web.zip
 	systemctl stop nginx
 	sleep 5

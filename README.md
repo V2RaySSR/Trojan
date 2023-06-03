@@ -1,4 +1,4 @@
-Trojan 一键安装脚本
+# Trojan 一键安装脚本
 
 ====================================
 
@@ -8,14 +8,14 @@ Trojan 一键安装自动脚本
 
 网站：www.v2rayssr.com （已开启禁止国内访问）
 
-脚本东拼西凑 需要感谢 秋水逸冰、Atrandys、V2ray官方等
-
-Youtube：波仔分享
+脚本东拼西凑 需要感谢 秋水逸冰、Atrandys、V2ray 官方 Youtube：波仔分享等
 
 ====================================
 
 脚本安装命令
 
-curl -O https://raw.githubusercontent.com/V2RaySSR/Trojan/master/Trojan.sh && chmod  x trojan.sh && ./trojan.sh
+```shell
+curl -O https://raw.githubusercontent.com/HEI201/Trojan-fork/master/trojan_install.sh && chmod  x trojan_install.sh && ./trojan_install.sh
 
-wget --no-check-certificate https://raw.githubusercontent.com/V2RaySSR/Trojan/master/Trojan.sh && chmod +x Trojan.sh && ./Trojan.sh
+wget --no-check-certificate https://raw.githubusercontent.com/HEI201/Trojan-fork/master/trojan_install.sh && chmod +x trojan_install.sh && ./trojan_install.sh
+```

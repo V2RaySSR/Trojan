@@ -69,7 +69,7 @@ function install_trojan() {
         red "======================================================================="
         red "检测到SELinux为开启状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
         red "======================================================================="
-        read -pr "是否现在重启 ?请输入 [Y/n] :" yn
+        read -p "是否现在重启 ?请输入 [Y/n] :" yn -r
         [ -z "${yn}" ] && yn="y"
         if [[ $yn == [Yy] ]]; then
             sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
@@ -83,7 +83,7 @@ function install_trojan() {
         red "======================================================================="
         red "检测到SELinux为宽容状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
         red "======================================================================="
-        read -pr "是否现在重启 ?请输入 [Y/n] :" yn
+        read -p "是否现在重启 ?请输入 [Y/n] :" yn -r
         [ -z "${yn}" ] && yn="y"
         if [[ $yn == [Yy] ]]; then
             sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -392,7 +392,7 @@ function repair_cert() {
     blue "请输入绑定到本VPS的域名"
     blue "务必与之前失败使用的域名一致"
     green "======================="
-    read -r your_domain
+    read your_domain -r
     real_addr=$(ping "${your_domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
     local_addr=$(curl ipv4.icanhazip.com)
     if [ "$real_addr" == "$local_addr" ]; then

@@ -319,6 +319,82 @@ EOF
     }
 }
 EOF
+
+            # clash yaml 配置文件
+            cat >/usr/src/trojan-cli/clash-global-config.yaml <<-EOF
+# HTTP 端口
+port: 7890
+
+# SOCKS5 端口
+socks-port: 7891
+
+allow-lan: false
+
+# Rule / Global / Direct (默认为 Rule 模式)
+mode: Global
+
+# 设置输出日志的等级 (默认为 info)
+# info / warning / error / debug / silent
+log-level: info
+
+# RESTful API for clash
+external-controller: 127.0.0.1:9090
+
+# 实验性功能
+experimental:
+  ignore-resolve-fail: true # 忽略 DNS 解析失败，默认值为true
+  # interface-name: en0 # 出站接口名称
+
+# # 实验性 hosts, 支持通配符（如 *.clash.dev 甚至 *.foo.*.examplex.com ）
+# # 静态域的优先级高于通配符域（foo.example.com > *.example.com）
+hosts:
+  "mtalk.google.com": 108.177.125.188
+#   '*.clash.dev': 127.0.0.1
+#   'alpha.clash.dev': '::1'
+
+proxies:
+  # Trojan
+  - name: "trojan"
+    type: trojan
+    server: $real_addr
+    port: 443
+    password: $trojan_passwd
+    # udp: true
+    sni: $your_domain # 填写伪装域名
+    alpn:
+      - h2
+      - http/1.1
+    # skip-cert-verify: true
+
+# Clash for Windows
+cfw-bypass:
+  - qq.com
+  - music.163.com
+  - "*.music.126.net"
+  - localhost
+  - 127.*
+  - 10.*
+  - 172.16.*
+  - 172.17.*
+  - 172.18.*
+  - 172.19.*
+  - 172.20.*
+  - 172.21.*
+  - 172.22.*
+  - 172.23.*
+  - 172.24.*
+  - 172.25.*
+  - 172.26.*
+  - 172.27.*
+  - 172.28.*
+  - 172.29.*
+  - 172.30.*
+  - 172.31.*
+  - 192.168.*
+  - <local>
+cfw-latency-timeout: 5000
+
+EOF
             #打包WIN客户端
             cd /usr/src/trojan-cli/ || exit
             zip -q -r trojan-cli.zip /usr/src/trojan-cli/

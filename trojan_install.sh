@@ -461,7 +461,7 @@ start_menu() {
     green " 4. 安装BBR-PLUS加速4合一脚本"
     blue " 0. 退出脚本"
     echo
-    read -pr "请输入数字:" num
+    read -p -r "请输入数字:" num
     case "$num" in
     1)
         install_trojan

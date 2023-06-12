@@ -397,7 +397,7 @@ cfw-latency-timeout: 5000
 EOF
             #打包WIN客户端
             cd /usr/src/trojan-cli/ || exit
-            zip -q -r trojan-cli.zip /usr/src/trojan-cli/
+            zip -q -r trojan-cli.zip .
             trojan_path=$(head -1 </dev/urandom | md5sum | head -c 16)
             mkdir /usr/share/nginx/html/"${trojan_path}"
             mv /usr/src/trojan-cli/trojan-cli.zip /usr/share/nginx/html/"${trojan_path}"/

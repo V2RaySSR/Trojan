@@ -321,7 +321,7 @@ EOF
 EOF
 
             # clash yaml 配置文件
-            cat >/usr/src/trojan-cli/clash-global-config.yaml <<-EOF
+            cat >"/usr/src/trojan-cli/clash-global-config-${your_domain}.yaml" <<-EOF
 # HTTP 端口
 port: 7890
 

@@ -187,6 +187,7 @@ EOF
         if test -s /usr/src/trojan-cert/fullchain.cer; then
             systemctl start nginx
             cd /usr/src || exit
+            # 下载 Trojan Linux 客户端
             wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
             latest_version=$(grep tag_name latest | awk -F '[:,"v]' '{print $6}')
             wget https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-linux-amd64.tar.xz
@@ -396,14 +397,14 @@ cfw-latency-timeout: 5000
 EOF
             #打包WIN客户端
             cd /usr/src/trojan-cli/ || exit
-            zip -q -r trojan-cli.zip .
+            zip -q -r "trojan-cli-${your_domain}.zip" .
             trojan_path=$(head -1 </dev/urandom | md5sum | head -c 16)
             mkdir /usr/share/nginx/html/"${trojan_path}"
-            mv /usr/src/trojan-cli/trojan-cli.zip /usr/share/nginx/html/"${trojan_path}"/
+            mv "/usr/src/trojan-cli/trojan-cli-${your_domain}.zip" /usr/share/nginx/html/"${trojan_path}"/
             #打包MAC客户端
             cd /usr/src/trojan-macos/ || exit
-            zip -q -r trojan-mac.zip /usr/src/trojan-macos/
-            mv /usr/src/trojan-macos/trojan-mac.zip /usr/share/nginx/html/"${trojan_path}"/
+            zip -q -r "trojan-mac-${your_domain}.zip" /usr/src/trojan-macos/
+            mv "/usr/src/trojan-macos/trojan-mac-${your_domain}.zip" /usr/share/nginx/html/"${trojan_path}"/
 
             #增加启动脚本
             cat >"${systempwd}"trojan.service <<-EOF
@@ -429,9 +430,9 @@ EOF
             green "======================================================================"
             green "Trojan已安装完成, 请使用以下链接下载trojan客户端, 此客户端已配置好所有参数"
             green "1、复制下面的链接, 在浏览器打开, 下载客户端"
-            blue "Windows客户端下载:http://${your_domain}/$trojan_path/trojan-cli.zip"
-            blue "sftp: get /usr/share/nginx/html/$trojan_path/trojan-cli.zip"
-            blue "MacOS客户端下载:http://${your_domain}/$trojan_path/trojan-mac.zip"
+            blue "Windows客户端下载:http://${your_domain}/$trojan_path/trojan-cli-${your_domain}.zip"
+            blue "sftp: get /usr/share/nginx/html/$trojan_path/trojan-cli-${your_domain}.zip"
+            blue "MacOS客户端下载:http://${your_domain}/$trojan_path/trojan-mac-${your_domain}.zip"
             green "2、Windows将下载的客户端解压, 打开文件夹, 打开start.bat即打开并运行Trojan客户端"
             green "3、MacOS将下载的客户端解压, 打开文件夹, 打开start.command即打开并运行Trojan客户端"
             green "Trojan推荐使用 Mellow 工具代理(WIN/MAC通用)下载地址如下:"
@@ -478,7 +479,7 @@ function repair_cert() {
             --fullchain-file /usr/src/trojan-cert/fullchain.cer
         if test -s /usr/src/trojan-cert/fullchain.cer; then
             green "证书申请成功"
-            green "请将/usr/src/trojan-cert/下的fullchain.cer下载放到客户端trojan-cli文件夹"
+            green "请将/usr/src/trojan-cert/下的fullchain.cer下载放到客户端trojan-cli-${your_domain}文件夹"
             systemctl restart trojan
             systemctl start nginx
         else

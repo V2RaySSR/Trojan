@@ -9,7 +9,7 @@ green() {
 red() {
     echo -e "\033[31m\033[01m$1\033[0m"
 }
-#copy from 秋水逸冰 ss scripts
+
 if [[ -f /etc/redhat-release ]]; then
     release="centos"
     systemPackage="yum"
@@ -53,21 +53,21 @@ function install_trojan() {
     if [ -n "$Port80" ]; then
         process80=$(netstat -tlpn | awk -F '[: ]+' '$5=="80"{print $9}')
         red "==========================================================="
-        red "检测到80端口被占用，占用进程为：${process80}，本次安装结束"
+        red "检测到80端口被占用, 占用进程为: ${process80}, 本次安装结束"
         red "==========================================================="
         exit 1
     fi
     if [ -n "$Port443" ]; then
         process443=$(netstat -tlpn | awk -F '[: ]+' '$5=="443"{print $9}')
         red "============================================================="
-        red "检测到443端口被占用，占用进程为：${process443}，本次安装结束"
+        red "检测到443端口被占用, 占用进程为: ${process443}, 本次安装结束"
         red "============================================================="
         exit 1
     fi
     CHECK=$(grep SELINUX= /etc/selinux/config | grep -v "#")
     if [ "$CHECK" == "SELINUX=enforcing" ]; then
         red "======================================================================="
-        red "检测到SELinux为开启状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
+        red "检测到SELinux为开启状态, 为防止申请证书失败, 请先重启VPS后, 再执行本脚本"
         red "======================================================================="
         read -p "是否现在重启 ?请输入 [Y/n] :" yn -r
         [ -z "${yn}" ] && yn="y"
@@ -81,7 +81,7 @@ function install_trojan() {
     fi
     if [ "$CHECK" == "SELINUX=permissive" ]; then
         red "======================================================================="
-        red "检测到SELinux为宽容状态，为防止申请证书失败，请先重启VPS后，再执行本脚本"
+        red "检测到SELinux为宽容状态, 为防止申请证书失败, 请先重启VPS后, 再执行本脚本"
         red "======================================================================="
         read -p "是否现在重启 ?请输入 [Y/n] :" yn -r
         [ -z "${yn}" ] && yn="y"
@@ -139,7 +139,7 @@ function install_trojan() {
     local_addr=$(curl ipv4.icanhazip.com)
     if [ "$real_addr" == "$local_addr" ]; then
         green "=========================================="
-        green "       域名解析正常，开始安装trojan"
+        green "       域名解析正常, 开始安装trojan"
         green "=========================================="
         sleep 1s
         cat >/etc/nginx/nginx.conf <<-EOF
@@ -187,7 +187,6 @@ EOF
         if test -s /usr/src/trojan-cert/fullchain.cer; then
             systemctl start nginx
             cd /usr/src || exit
-            #wget https://github.com/trojan-gfw/trojan/releases/download/v1.13.0/trojan-1.13.0-linux-amd64.tar.xz
             wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
             latest_version=$(grep tag_name latest | awk -F '[:,"v]' '{print $6}')
             wget https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-linux-amd64.tar.xz
@@ -342,11 +341,11 @@ external-controller: 127.0.0.1:9090
 
 # 实验性功能
 experimental:
-  ignore-resolve-fail: true # 忽略 DNS 解析失败，默认值为true
+  ignore-resolve-fail: true # 忽略 DNS 解析失败, 默认值为true
   # interface-name: en0 # 出站接口名称
 
-# # 实验性 hosts, 支持通配符（如 *.clash.dev 甚至 *.foo.*.examplex.com ）
-# # 静态域的优先级高于通配符域（foo.example.com > *.example.com）
+# # 实验性 hosts, 支持通配符(如 *.clash.dev 甚至 *.foo.*.examplex.com )
+# # 静态域的优先级高于通配符域(foo.example.com > *.example.com)
 hosts:
   "mtalk.google.com": 108.177.125.188
 #   '*.clash.dev': 127.0.0.1
@@ -428,29 +427,29 @@ EOF
             systemctl start trojan.service
             systemctl enable trojan.service
             green "======================================================================"
-            green "Trojan已安装完成，请使用以下链接下载trojan客户端，此客户端已配置好所有参数"
-            green "1、复制下面的链接，在浏览器打开，下载客户端"
-            blue "Windows客户端下载：http://${your_domain}/$trojan_path/trojan-cli.zip"
+            green "Trojan已安装完成, 请使用以下链接下载trojan客户端, 此客户端已配置好所有参数"
+            green "1、复制下面的链接, 在浏览器打开, 下载客户端"
+            blue "Windows客户端下载:http://${your_domain}/$trojan_path/trojan-cli.zip"
             blue "sftp: get /usr/share/nginx/html/$trojan_path/trojan-cli.zip"
-            blue "MacOS客户端下载：http://${your_domain}/$trojan_path/trojan-mac.zip"
-            green "2、Windows将下载的客户端解压，打开文件夹，打开start.bat即打开并运行Trojan客户端"
-            green "3、MacOS将下载的客户端解压，打开文件夹，打开start.command即打开并运行Trojan客户端"
-            green "Trojan推荐使用 Mellow 工具代理（WIN/MAC通用）下载地址如下："
+            blue "MacOS客户端下载:http://${your_domain}/$trojan_path/trojan-mac.zip"
+            green "2、Windows将下载的客户端解压, 打开文件夹, 打开start.bat即打开并运行Trojan客户端"
+            green "3、MacOS将下载的客户端解压, 打开文件夹, 打开start.command即打开并运行Trojan客户端"
+            green "Trojan推荐使用 Mellow 工具代理(WIN/MAC通用)下载地址如下:"
             green "https://github.com/mellow-io/mellow/releases  (exe为Win客户端,dmg为Mac客户端)"
             green "======================================================================"
         else
             red "==================================="
-            red "https证书没有申请成果，自动安装失败"
-            green "不要担心，你可以手动修复证书申请"
+            red "https证书没有申请成果, 自动安装失败"
+            green "不要担心, 你可以手动修复证书申请"
             green "1. 重启VPS"
-            green "2. 重新执行脚本，使用修复证书功能"
+            green "2. 重新执行脚本, 使用修复证书功能"
             red "==================================="
         fi
 
     else
         red "================================"
         red "域名解析地址与本VPS IP地址不一致"
-        red "本次安装失败，请确保域名解析正常"
+        red "本次安装失败, 请确保域名解析正常"
         red "================================"
     fi
 }
@@ -461,7 +460,7 @@ function repair_cert() {
     if [ -n "$Port80" ]; then
         process80=$(netstat -tlpn | awk -F '[: ]+' '$5=="80"{print $9}')
         red "==========================================================="
-        red "检测到80端口被占用，占用进程为：${process80}，本次安装结束"
+        red "检测到80端口被占用, 占用进程为:${process80}, 本次安装结束"
         red "==========================================================="
         exit 1
     fi
@@ -488,7 +487,7 @@ function repair_cert() {
     else
         red "================================"
         red "域名解析地址与本VPS IP地址不一致"
-        red "本次安装失败，请确保域名解析正常"
+        red "本次安装失败, 请确保域名解析正常"
         red "================================"
     fi
 }
@@ -521,15 +520,15 @@ start_menu() {
     clear
     green " ===================================="
     green " Trojan 一键安装自动脚本 2020-2-27 更新      "
-    green " 系统：centos7+/debian9+/ubuntu16.04+"
-    green " 网站：www.v2rayssr.com （已开启禁止国内访问）"
-    green " 此脚本为 atrandys 的，波仔集成BBRPLUS加速及MAC客户端 "
-    green " Youtube：波仔分享                "
+    green " 系统:centos7+/debian9+/ubuntu16.04+"
+    green " 网站:www.v2rayssr.com (已开启禁止国内访问)"
+    green " 此脚本为 atrandys 的, 波仔集成BBRPLUS加速及MAC客户端 "
+    green " Youtube:波仔分享                "
     green " ===================================="
-    blue " 声明："
+    blue " 声明:"
     red " *请不要在任何生产环境使用此脚本"
     red " *请不要有其他程序占用80和443端口"
-    red " *若是第二次使用脚本，请先执行卸载trojan"
+    red " *若是第二次使用脚本, 请先执行卸载trojan"
     green " ======================================="
     echo
     green " 1. 安装trojan"

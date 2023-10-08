@@ -44,7 +44,7 @@ function install_trojan() {
     green "======================="
     blue "acme 申请 email"
     green "======================="
-    read your_email -r
+    read your_email
     curl https://get.acme.sh | sh -s email="$your_email"
     systemctl stop nginx
     $systemPackage -y install net-tools socat
@@ -69,7 +69,7 @@ function install_trojan() {
         red "======================================================================="
         red "检测到SELinux为开启状态, 为防止申请证书失败, 请先重启VPS后, 再执行本脚本"
         red "======================================================================="
-        read -p "是否现在重启 ?请输入 [Y/n] :" yn -r
+        read -p "是否现在重启 ?请输入 [Y/n] :" yn
         [ -z "${yn}" ] && yn="y"
         if [[ $yn == [Yy] ]]; then
             sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
@@ -83,7 +83,7 @@ function install_trojan() {
         red "======================================================================="
         red "检测到SELinux为宽容状态, 为防止申请证书失败, 请先重启VPS后, 再执行本脚本"
         red "======================================================================="
-        read -p "是否现在重启 ?请输入 [Y/n] :" yn -r
+        read -p "是否现在重启 ?请输入 [Y/n] :" yn
         [ -z "${yn}" ] && yn="y"
         if [[ $yn == [Yy] ]]; then
             sed -i 's/SELINUX=permissive/SELINUX=disabled/g' /etc/selinux/config
@@ -134,7 +134,7 @@ function install_trojan() {
     green "======================="
     blue "请输入绑定到本VPS的域名"
     green "======================="
-    read your_domain -r
+    read your_domain
     real_addr=$(ping "${your_domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
     local_addr=$(curl ipv4.icanhazip.com)
     if [ "$real_addr" == "$local_addr" ]; then
@@ -469,7 +469,7 @@ function repair_cert() {
     blue "请输入绑定到本VPS的域名"
     blue "务必与之前失败使用的域名一致"
     green "======================="
-    read your_domain -r
+    read your_domain
     real_addr=$(ping "${your_domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
     local_addr=$(curl ipv4.icanhazip.com)
     if [ "$real_addr" == "$local_addr" ]; then
@@ -538,7 +538,7 @@ start_menu() {
     green " 4. 安装BBR-PLUS加速4合一脚本"
     blue " 0. 退出脚本"
     echo
-    read -p "请输入数字:" num -r
+    read -p "请输入数字:" num
     case "$num" in
     1)
         install_trojan

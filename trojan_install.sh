@@ -55,11 +55,6 @@ function get_domain(){
     read your_domain
 }
 function test_ports(){
-    # Stop the nginx service
-    systemctl stop nginx
-
-    # Installs net-tools and socat packages using the system package manager.
-    $systemPackage -y install net-tools socat
 
     # This command uses netstat to get a list of all TCP connections and filters out the ones that are listening (-l) and using the TCP protocol (-t). It then uses awk to split the output by colon and space characters and prints the fifth field, which is the port number. Finally, it filters the output to only show port 80.
     Port80=$(netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80)
@@ -440,6 +435,12 @@ function install_trojan() {
 
     get_email    
 
+    # Stop the nginx service
+    systemctl stop nginx
+
+    # Installs net-tools and socat packages using the system package manager.
+    $systemPackage -y install net-tools socat
+    
     # This script installs the acme.sh client by downloading it from the internet and running it with the provided email address as a parameter.
     curl https://get.acme.sh | sh -s email="$your_email"
 

@@ -40,18 +40,28 @@ elif grep -Eqi "centos|red hat|redhat" </proc/version; then
     systempwd="/usr/lib/systemd/system/"
 fi
 
-function install_trojan() {
-
+function get_email() {
     green "======================="
     blue "acme 申请 email"
     green "======================="
 
     read your_email
+}
+function get_domain(){
+    green "======================="
+    blue "请输入绑定到本VPS的域名"
+    green "======================="
 
-    curl https://get.acme.sh | sh -s email="$your_email"
+    read your_domain
+}
+function test_ports(){
+    # Stop the nginx service
     systemctl stop nginx
+
+    # Installs net-tools and socat packages using the system package manager.
     $systemPackage -y install net-tools socat
 
+    # This command uses netstat to get a list of all TCP connections and filters out the ones that are listening (-l) and using the TCP protocol (-t). It then uses awk to split the output by colon and space characters and prints the fifth field, which is the port number. Finally, it filters the output to only show port 80.
     Port80=$(netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80)
     Port443=$(netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 443)
 
@@ -75,6 +85,9 @@ function install_trojan() {
         exit 1
     fi
 
+}
+function check_selinux(){
+    # This line of code checks if SELinux is enabled by searching for the SELINUX= line in the /etc/selinux/config file and excluding any commented out lines.
     CHECK=$(grep SELINUX= /etc/selinux/config | grep -v "#")
 
     if [ "$CHECK" == "SELINUX=enforcing" ]; then
@@ -83,6 +96,7 @@ function install_trojan() {
         red "检测到SELinux为开启状态, 为防止申请证书失败, 请先重启VPS后, 再执行本脚本"
         red "======================================================================="
 
+        # Prompts the user to confirm if they want to restart and waits for their input.
         read -p "是否现在重启 ?请输入 [Y/n] :" yn
 
         [ -z "${yn}" ] && yn="y"
@@ -95,8 +109,11 @@ function install_trojan() {
 
             reboot
         fi
+
         exit
+
     fi
+
     if [ "$CHECK" == "SELINUX=permissive" ]; then
 
         red "======================================================================="
@@ -118,6 +135,9 @@ function install_trojan() {
 
         exit
     fi
+}
+
+function check_system_support(){
     if [ "$release" == "centos" ]; then
         if grep -q ' 6\.' /etc/redhat-release; then
 
@@ -162,28 +182,9 @@ function install_trojan() {
     elif [ "$release" == "debian" ]; then
         apt-get update
     fi
-
-    $systemPackage -y install nginx wget unzip zip curl tar >/dev/null 2>&1
-    systemctl enable nginx
-    systemctl stop nginx
-
-    green "======================="
-    blue "请输入绑定到本VPS的域名"
-    green "======================="
-
-    read your_domain
-
-    real_addr=$(ping "${your_domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
-    local_addr=$(curl ipv4.icanhazip.com)
-
-    if [ "$real_addr" == "$local_addr" ]; then
-
-        green "=========================================="
-        green "       域名解析正常, 开始安装trojan"
-        green "=========================================="
-
-        sleep 1s
-        cat >/etc/nginx/nginx.conf <<-EOF
+}
+function gen_nginx_conf(){
+    cat >/etc/nginx/nginx.conf <<-EOF
 user  root;
 worker_processes  1;
 error_log  /var/log/nginx/error.log warn;
@@ -210,62 +211,13 @@ http {
         index index.php index.html index.htm;
     }
 }
+
 EOF
-        #设置伪装站
-        rm -rf /usr/share/nginx/html/*
+}
 
-        cd /usr/share/nginx/html/ || exit
-        wget https://github.com/HEI201/Trojan-fork/raw/master/web.zip
-        unzip web.zip
-
-        systemctl stop nginx
-
-        sleep 5
-
-        #申请https证书
-        mkdir /usr/src/trojan-cert /usr/src/trojan-temp
-
-        curl https://get.acme.sh | sh
-
-        ~/.acme.sh/acme.sh --issue -d "$your_domain" --standalone
-
-        ~/.acme.sh/acme.sh --installcert -d "$your_domain" \
-            --key-file /usr/src/trojan-cert/private.key \
-            --fullchain-file /usr/src/trojan-cert/fullchain.cer
-
-        if test -s /usr/src/trojan-cert/fullchain.cer; then
-            systemctl start nginx
-            cd /usr/src || exit
-
-            # 下载 Trojan Linux 客户端
-            wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
-            latest_version=$(grep tag_name latest | awk -F '[:,"v]' '{print $6}')
-
-            wget https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-linux-amd64.tar.xz
-
-            tar xf trojan-"${latest_version}"-linux-amd64.tar.xz
-
-            #下载trojan WIN客户端
-            wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
-
-            wget -P /usr/src/trojan-temp https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-win.zip
-
-            unzip trojan-cli.zip
-            unzip /usr/src/trojan-temp/trojan-"${latest_version}"-win.zip -d /usr/src/trojan-temp/
-
-            cp /usr/src/trojan-cert/fullchain.cer /usr/src/trojan-cli/fullchain.cer
-            mv -f /usr/src/trojan-temp/trojan/trojan.exe /usr/src/trojan-cli/
-
-            #下载trojan MAC客户端
-            wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-macos.zip
-
-            unzip /usr/src/trojan-macos/trojan-"${latest_version}"-macos.zip -d /usr/src/trojan-macos/
-
-            rm -rf /usr/src/trojan-macos/trojan-"${latest_version}"-macos.zip
-            trojan_passwd=$(head -1 </dev/urandom | md5sum | head -c 8)
-
-            #配置trojan mac
-            cat >/usr/src/trojan-macos/trojan/config.json <<-EOF
+function gen_trojan_conf_mac(){
+    #配置trojan mac
+    cat >/usr/src/trojan-macos/trojan/config.json <<-EOF
 {
     "run_type": "client",
     "local_addr": "127.0.0.1",
@@ -301,8 +253,10 @@ EOF
 }
 
 EOF
-            # 配置trojan-cli 客户端
-            cat >/usr/src/trojan-cli/config.json <<-EOF
+}
+function gen_trojan_conf_win(){
+    # 配置trojan-cli 客户端
+    cat >/usr/src/trojan-cli/config.json <<-EOF
 {
     "run_type": "client",
     "local_addr": "127.0.0.1",
@@ -335,9 +289,11 @@ EOF
     }
 }
 EOF
-            # 配置trojan 服务端
-            rm -rf /usr/src/trojan/server.conf
-            cat >/usr/src/trojan/server.conf <<-EOF
+}
+function gen_trojan_conf_server(){
+    # 配置trojan 服务端
+    rm -rf /usr/src/trojan/server.conf
+    cat >/usr/src/trojan/server.conf <<-EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -381,8 +337,11 @@ EOF
 }
 EOF
 
-            # clash yaml 配置文件
-            cat >"/usr/src/trojan-cli/clash-global-config-${your_domain}.yaml" <<-EOF
+}
+
+function gen_clash_conf(){
+    # clash yaml 配置文件
+    cat >"/usr/src/trojan-cli/clash-global-config-${your_domain}.yaml" <<-EOF
 # HTTP 端口
 port: 7890
 
@@ -456,6 +415,123 @@ cfw-bypass:
 cfw-latency-timeout: 5000
 
 EOF
+}
+function add_trojan_startup_service(){
+    #增加启动脚本
+    cat >"${systempwd}"trojan.service <<-EOF
+[Unit]  
+Description=trojan  
+After=network.target  
+   
+[Service]  
+Type=simple  
+PIDFile=/usr/src/trojan/trojan/trojan.pid
+ExecStart=/usr/src/trojan/trojan -c "/usr/src/trojan/server.conf"  
+ExecReload=  
+ExecStop=/usr/src/trojan/trojan  
+PrivateTmp=true  
+   
+[Install]  
+WantedBy=multi-user.target
+
+EOF
+}
+function install_trojan() {
+
+    get_email    
+
+    # This script installs the acme.sh client by downloading it from the internet and running it with the provided email address as a parameter.
+    curl https://get.acme.sh | sh -s email="$your_email"
+
+    test_ports
+
+    check_selinux
+
+    check_system_support
+
+    $systemPackage -y install nginx wget unzip zip curl tar >/dev/null 2>&1
+    systemctl enable nginx
+    systemctl stop nginx
+
+    get_domain
+
+    real_addr=$(ping "${your_domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
+    local_addr=$(curl ipv4.icanhazip.com)
+
+    if [ "$real_addr" == "$local_addr" ]; then
+
+        green "=========================================="
+        green "       域名解析正常, 开始安装trojan"
+        green "=========================================="
+
+        sleep 1s
+        
+        gen_nginx_conf
+
+        #设置伪装站
+        rm -rf /usr/share/nginx/html/*
+
+        cd /usr/share/nginx/html/ || exit
+        wget https://github.com/HEI201/Trojan-fork/raw/master/web.zip
+        unzip web.zip
+
+        systemctl stop nginx
+
+        sleep 5
+
+        #申请https证书
+        mkdir /usr/src/trojan-cert /usr/src/trojan-temp
+
+        curl https://get.acme.sh | sh
+
+        ~/.acme.sh/acme.sh --issue -d "$your_domain" --standalone
+
+        ~/.acme.sh/acme.sh --installcert -d "$your_domain" \
+            --key-file /usr/src/trojan-cert/private.key \
+            --fullchain-file /usr/src/trojan-cert/fullchain.cer
+
+        if test -s /usr/src/trojan-cert/fullchain.cer; then
+            systemctl start nginx
+            cd /usr/src || exit
+
+            # 下载 Trojan Linux 客户端
+            wget https://api.github.com/repos/trojan-gfw/trojan/releases/latest
+            latest_version=$(grep tag_name latest | awk -F '[:,"v]' '{print $6}')
+
+            wget https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-linux-amd64.tar.xz
+
+            # 解压 Trojan Linux 客户端
+            tar xf trojan-"${latest_version}"-linux-amd64.tar.xz
+
+            #下载trojan WIN客户端
+            wget https://github.com/atrandys/trojan/raw/master/trojan-cli.zip
+
+            wget -P /usr/src/trojan-temp https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-win.zip
+
+            # 解压 Trojan WIN 客户端
+            unzip trojan-cli.zip
+            unzip /usr/src/trojan-temp/trojan-"${latest_version}"-win.zip -d /usr/src/trojan-temp/
+
+            cp /usr/src/trojan-cert/fullchain.cer /usr/src/trojan-cli/fullchain.cer
+            mv -f /usr/src/trojan-temp/trojan/trojan.exe /usr/src/trojan-cli/
+
+            #下载trojan MAC客户端
+            wget -P /usr/src/trojan-macos https://github.com/trojan-gfw/trojan/releases/download/v"${latest_version}"/trojan-"${latest_version}"-macos.zip
+
+            # 解压 Trojan MAC 客户端
+            unzip /usr/src/trojan-macos/trojan-"${latest_version}"-macos.zip -d /usr/src/trojan-macos/
+
+            rm -rf /usr/src/trojan-macos/trojan-"${latest_version}"-macos.zip
+            trojan_passwd=$(head -1 </dev/urandom | md5sum | head -c 8)
+
+            gen_trojan_conf_mac
+
+            gen_trojan_conf_win
+
+            gen_trojan_conf_server
+
+            gen_clash_conf
+                
             #打包WIN客户端
             cd /usr/src/trojan-cli/ || exit
             
@@ -474,23 +550,7 @@ EOF
             
             mv "/usr/src/trojan-macos/trojan-mac-${your_domain}.zip" /usr/share/nginx/html/"${trojan_path}"/
 
-            #增加启动脚本
-            cat >"${systempwd}"trojan.service <<-EOF
-[Unit]  
-Description=trojan  
-After=network.target  
-   
-[Service]  
-Type=simple  
-PIDFile=/usr/src/trojan/trojan/trojan.pid
-ExecStart=/usr/src/trojan/trojan -c "/usr/src/trojan/server.conf"  
-ExecReload=  
-ExecStop=/usr/src/trojan/trojan  
-PrivateTmp=true  
-   
-[Install]  
-WantedBy=multi-user.target
-EOF
+            add_trojan_startup_service
 
             chmod +x "${systempwd}"trojan.service
             systemctl start trojan.service

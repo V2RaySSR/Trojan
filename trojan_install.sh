@@ -432,6 +432,8 @@ WantedBy=multi-user.target
 EOF
 }
 function install_trojan() {
+    sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+    sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 
     get_email    
 
@@ -440,7 +442,7 @@ function install_trojan() {
 
     # Installs net-tools and socat packages using the system package manager.
     $systemPackage -y install net-tools socat
-    
+
     # This script installs the acme.sh client by downloading it from the internet and running it with the provided email address as a parameter.
     curl https://get.acme.sh | sh -s email="$your_email"
 

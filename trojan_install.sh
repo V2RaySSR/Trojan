@@ -432,6 +432,7 @@ WantedBy=multi-user.target
 EOF
 }
 function install_trojan() {
+    # 防火墙放通这两个端口
     sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 

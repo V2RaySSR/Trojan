@@ -40,21 +40,49 @@ elif grep -Eqi "centos|red hat|redhat" </proc/version; then
     systempwd="/usr/lib/systemd/system/"
 fi
 
+# read email and domain from cli arguments
+your_email=$1
+your_domain=$2
+
+function read_conf_files() {
+    # read trojan_config_win.json file content to a variable named "trojan_config_win"
+    trojan_config_win=$(cat trojan_config_win.json)
+    # read trojan_config_mac.json file content to a variable named "trojan_config_mac"
+    trojan_config_mac=$(cat trojan_config_mac.json)
+    # read trojan_server.conf file content to a variable named "trojan_server"
+    trojan_server=$(cat trojan_server.conf)
+    # read nginx.conf file content to a variable named "nginx_conf"
+    nginx_conf=$(cat nginx.conf)
+    # read trojan.service file content to a variable named "trojan_service"
+    trojan_service=$(cat trojan.service)
+    # read clash-global-config.yaml file content to a variable named "clash_global_config"
+    clash_global_config=$(cat clash-global-config.yaml)
+}
+
 function get_email() {
-    green "======================="
-    blue "acme 申请 email"
-    green "======================="
+    # if $your_email is empty, then read email from user input
+    if [ -z "$your_email" ]; then
+        get_email_from_input
+        green "======================="
+        blue "acme 申请 email"
+        green "======================="
 
-    read your_email
+        read your_email
+    fi
 }
-function get_domain(){
-    green "======================="
-    blue "请输入绑定到本VPS的域名"
-    green "======================="
 
-    read your_domain
+function get_domain() {
+    # if $your_domain is empty, then read domain from user input
+    if [ -z "$your_domain" ]; then
+        green "======================="
+        blue "请输入绑定到本VPS的域名"
+        green "======================="
+
+        read your_domain
+    fi
 }
-function test_ports(){
+
+function test_ports() {
 
     # This command uses netstat to get a list of all TCP connections and filters out the ones that are listening (-l) and using the TCP protocol (-t). It then uses awk to split the output by colon and space characters and prints the fifth field, which is the port number. Finally, it filters the output to only show port 80.
     Port80=$(netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80)
@@ -81,7 +109,8 @@ function test_ports(){
     fi
 
 }
-function check_selinux(){
+
+function check_selinux() {
     # This line of code checks if SELinux is enabled by searching for the SELINUX= line in the /etc/selinux/config file and excluding any commented out lines.
     CHECK=$(grep SELINUX= /etc/selinux/config | grep -v "#")
 
@@ -132,7 +161,7 @@ function check_selinux(){
     fi
 }
 
-function check_system_support(){
+function check_system_support() {
     if [ "$release" == "centos" ]; then
         if grep -q ' 6\.' /etc/redhat-release; then
 
@@ -178,265 +207,62 @@ function check_system_support(){
         apt-get update
     fi
 }
-function gen_nginx_conf(){
-    cat >/etc/nginx/nginx.conf <<-EOF
-user  root;
-worker_processes  1;
-error_log  /var/log/nginx/error.log warn;
-pid        /var/run/nginx.pid;
-events {
-    worker_connections  1024;
-}
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-    log_format  main  '\$remote_addr - \$remote_user [\$time_local] "\$request" '
-                      '\$status \$body_bytes_sent "\$http_referer" '
-                      '"\$http_user_agent" "\$http_x_forwarded_for"';
-    access_log  /var/log/nginx/access.log  main;
-    sendfile        on;
-    #tcp_nopush     on;
-    keepalive_timeout  120;
-    client_max_body_size 20m;
-    #gzip  on;
-    server {
-        listen       80;
-        server_name  $your_domain;
-        root /usr/share/nginx/html;
-        index index.php index.html index.htm;
-    }
+
+function gen_nginx_conf() {
+    # replace "$domain_placeholder" with $your_domain in variable "nginx_conf" and write it to /etc/nginx/nginx.conf.
+    nginx_conf=$(echo "$nginx_conf" | sed "s/\${domain_placeholder}/$your_domain/g")
+    echo "$nginx_conf" >/etc/nginx/nginx.conf
 }
 
-EOF
+#配置trojan mac
+function gen_trojan_conf_mac() {
+    # replace "$domain_placeholder" with $your_domain, replace "$password_placeholder" with $trojan_passwd in variable "trojan_config_mac" and write it to /usr/src/trojan-macos/trojan/config.json.
+    trojan_config_mac=$(echo "$trojan_config_mac" | sed -e "s/\${domain_placeholder}/$your_domain/g" -e "s/\${password_placeholder}/$trojan_passwd/g")
+    echo "$trojan_config_mac" >/usr/src/trojan-macos/trojan/config.json
 }
 
-function gen_trojan_conf_mac(){
-    #配置trojan mac
-    cat >/usr/src/trojan-macos/trojan/config.json <<-EOF
-{
-    "run_type": "client",
-    "local_addr": "127.0.0.1",
-    "local_port": 1080,
-    "remote_addr": "$your_domain",
-    "remote_port": 443,
-    "password": [
-        "$trojan_passwd"
-    ],
-    "log_level": 1,
-    "ssl": {
-        "verify": true,
-        "verify_hostname": true,
-        "cert": "",
-        "cipher": "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA:AES128-SHA:AES256-SHA:DES-CBC3-SHA",
-        "cipher_tls13": "TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-        "sni": "",
-        "alpn": [
-            "h2",
-            "http/1.1"
-        ],
-        "reuse_session": true,
-        "session_ticket": false,
-        "curves": ""
-    },
-    "tcp": {
-        "no_delay": true,
-        "keep_alive": true,
-        "reuse_port": false,
-        "fast_open": false,
-        "fast_open_qlen": 20
-    }
+# 配置trojan-cli 客户端
+function gen_trojan_conf_win() {
+    # replace "$domain_placeholder" with $your_domain, replace "$password_placeholder" with $trojan_passwd in variable "trojan_config_win" and write it to /usr/src/trojan-cli/config.json.
+    trojan_config_win=$(echo "$trojan_config_win" | sed -e "s/\${domain_placeholder}/$your_domain/g" -e "s/\${password_placeholder}/$trojan_passwd/g")
+    echo "$trojan_config_win" >/usr/src/trojan-cli/config.json
 }
 
-EOF
-}
-function gen_trojan_conf_win(){
-    # 配置trojan-cli 客户端
-    cat >/usr/src/trojan-cli/config.json <<-EOF
-{
-    "run_type": "client",
-    "local_addr": "127.0.0.1",
-    "local_port": 1080,
-    "remote_addr": "$your_domain",
-    "remote_port": 443,
-    "password": [
-        "$trojan_passwd"
-    ],
-    "log_level": 1,
-    "ssl": {
-        "verify": true,
-        "verify_hostname": true,
-        "cert": "fullchain.cer",
-        "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-	"sni": "",
-        "alpn": [
-            "h2",
-            "http/1.1"
-        ],
-        "reuse_session": true,
-        "session_ticket": false,
-        "curves": ""
-    },
-    "tcp": {
-        "no_delay": true,
-        "keep_alive": true,
-        "fast_open": false,
-        "fast_open_qlen": 20
-    }
-}
-EOF
-}
-function gen_trojan_conf_server(){
-    # 配置trojan 服务端
+# 配置trojan 服务端
+function gen_trojan_conf_server() {
+
     rm -rf /usr/src/trojan/server.conf
-    cat >/usr/src/trojan/server.conf <<-EOF
-{
-    "run_type": "server",
-    "local_addr": "0.0.0.0",
-    "local_port": 443,
-    "remote_addr": "127.0.0.1",
-    "remote_port": 80,
-    "password": [
-        "$trojan_passwd"
-    ],
-    "log_level": 1,
-    "ssl": {
-        "cert": "/usr/src/trojan-cert/fullchain.cer",
-        "key": "/usr/src/trojan-cert/private.key",
-        "key_password": "",
-        "cipher_tls13":"TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384",
-	"prefer_server_cipher": true,
-        "alpn": [
-            "http/1.1"
-        ],
-        "reuse_session": true,
-        "session_ticket": false,
-        "session_timeout": 600,
-        "plain_http_response": "",
-        "curves": "",
-        "dhparam": ""
-    },
-    "tcp": {
-        "no_delay": true,
-        "keep_alive": true,
-        "fast_open": false,
-        "fast_open_qlen": 20
-    },
-    "mysql": {
-        "enabled": false,
-        "server_addr": "127.0.0.1",
-        "server_port": 3306,
-        "database": "trojan",
-        "username": "trojan",
-        "password": ""
-    }
+
+    # replace "$password_placeholder" with $trojan_passwd in variable "trojan_server" and write it to /usr/src/trojan/server.conf.
+    trojan_server=$(echo "$trojan_server" | sed "s/\${password_placeholder}/$trojan_passwd/g")
+    echo "$trojan_server" >>/usr/src/trojan/server.conf
 }
-EOF
+
+# clash yaml 配置文件
+function gen_clash_conf() {
+
+    # replace "$domain_placeholder" with $your_domain, replace "$password_placeholder" with $trojan_passwd, replace "$vps_real_addr" with $real_addr in variable "clash_global_config" and write it to  /usr/src/trojan-cli/clash-global-config-${your_domain}.yaml
+    clash_global_config=$(echo "$clash_global_config" | sed -e "s/\${domain_placeholder}/$your_domain/g" -e "s/\${password_placeholder}/$trojan_passwd/g" -e "s/\${vps_real_addr}/$real_addr/g")
+    echo "$clash_global_config" >/usr/src/trojan-cli/clash-global-config-${your_domain}.yaml
 
 }
 
-function gen_clash_conf(){
-    # clash yaml 配置文件
-    cat >"/usr/src/trojan-cli/clash-global-config-${your_domain}.yaml" <<-EOF
-# HTTP 端口
-port: 7890
+#增加启动脚本
+function add_trojan_startup_service() {
 
-# SOCKS5 端口
-socks-port: 7891
-
-allow-lan: false
-
-# Rule / Global / Direct (默认为 Rule 模式)
-mode: Global
-
-# 设置输出日志的等级 (默认为 info)
-# info / warning / error / debug / silent
-log-level: info
-
-# RESTful API for clash
-external-controller: 127.0.0.1:9090
-
-# 实验性功能
-experimental:
-  ignore-resolve-fail: true # 忽略 DNS 解析失败, 默认值为true
-  # interface-name: en0 # 出站接口名称
-
-# # 实验性 hosts, 支持通配符(如 *.clash.dev 甚至 *.foo.*.examplex.com )
-# # 静态域的优先级高于通配符域(foo.example.com > *.example.com)
-hosts:
-  "mtalk.google.com": 108.177.125.188
-#   '*.clash.dev': 127.0.0.1
-#   'alpha.clash.dev': '::1'
-
-proxies:
-  # Trojan
-  - name: "trojan"
-    type: trojan
-    server: $real_addr
-    port: 443
-    password: $trojan_passwd
-    # udp: true
-    sni: $your_domain # 填写伪装域名
-    alpn:
-      - h2
-      - http/1.1
-    # skip-cert-verify: true
-
-# Clash for Windows
-cfw-bypass:
-  - qq.com
-  - music.163.com
-  - "*.music.126.net"
-  - localhost
-  - 127.*
-  - 10.*
-  - 172.16.*
-  - 172.17.*
-  - 172.18.*
-  - 172.19.*
-  - 172.20.*
-  - 172.21.*
-  - 172.22.*
-  - 172.23.*
-  - 172.24.*
-  - 172.25.*
-  - 172.26.*
-  - 172.27.*
-  - 172.28.*
-  - 172.29.*
-  - 172.30.*
-  - 172.31.*
-  - 192.168.*
-  - <local>
-cfw-latency-timeout: 5000
-
-EOF
+    # write the content of variable "trojan_service" to "${systempwd}"trojan.service
+    echo "$trojan_service" >"${systempwd}"trojan.service
 }
-function add_trojan_startup_service(){
-    #增加启动脚本
-    cat >"${systempwd}"trojan.service <<-EOF
-[Unit]  
-Description=trojan  
-After=network.target  
-   
-[Service]  
-Type=simple  
-PIDFile=/usr/src/trojan/trojan/trojan.pid
-ExecStart=/usr/src/trojan/trojan -c "/usr/src/trojan/server.conf"  
-ExecReload=  
-ExecStop=/usr/src/trojan/trojan  
-PrivateTmp=true  
-   
-[Install]  
-WantedBy=multi-user.target
 
-EOF
-}
 function install_trojan() {
-    # 防火墙放通这两个端口
+
+    read_conf_files
+
+    # 防火墙放通 80 443 这两个端口
     sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
     sudo iptables -A INPUT -p tcp --dport 443 -j ACCEPT
 
-    get_email    
+    get_email
 
     # Stop the nginx service
     systemctl stop nginx
@@ -469,7 +295,7 @@ function install_trojan() {
         green "=========================================="
 
         sleep 1s
-        
+
         gen_nginx_conf
 
         #设置伪装站
@@ -535,23 +361,23 @@ function install_trojan() {
             gen_trojan_conf_server
 
             gen_clash_conf
-                
+
             #打包WIN客户端
             cd /usr/src/trojan-cli/ || exit
-            
+
             zip -q -r "trojan-cli-${your_domain}.zip" .
-            
+
             trojan_path=$(head -1 </dev/urandom | md5sum | head -c 16)
-            
+
             mkdir /usr/share/nginx/html/"${trojan_path}"
-            
+
             mv "/usr/src/trojan-cli/trojan-cli-${your_domain}.zip" /usr/share/nginx/html/"${trojan_path}"/
-            
+
             #打包MAC客户端
             cd /usr/src/trojan-macos/ || exit
-            
+
             zip -q -r "trojan-mac-${your_domain}.zip" /usr/src/trojan-macos/
-            
+
             mv "/usr/src/trojan-macos/trojan-mac-${your_domain}.zip" /usr/share/nginx/html/"${trojan_path}"/
 
             add_trojan_startup_service
@@ -559,22 +385,22 @@ function install_trojan() {
             chmod +x "${systempwd}"trojan.service
             systemctl start trojan.service
             systemctl enable trojan.service
-            
+
             green "======================================================================"
-            
+
             green "Trojan已安装完成, 请使用以下链接下载trojan客户端, 此客户端已配置好所有参数"
             green "1、复制下面的链接, 在浏览器打开, 下载客户端"
-            
+
             blue "Windows客户端下载:http://${your_domain}/$trojan_path/trojan-cli-${your_domain}.zip"
             blue "sftp: get /usr/share/nginx/html/$trojan_path/trojan-cli-${your_domain}.zip"
             blue "MacOS客户端下载:http://${your_domain}/$trojan_path/trojan-mac-${your_domain}.zip"
-            
+
             green "2、Windows将下载的客户端解压, 打开文件夹, 打开start.bat即打开并运行Trojan客户端"
             green "3、MacOS将下载的客户端解压, 打开文件夹, 打开start.command即打开并运行Trojan客户端"
-            
+
             green "Trojan推荐使用 Mellow 工具代理(WIN/MAC通用)下载地址如下:"
             green "https://github.com/mellow-io/mellow/releases  (exe为Win客户端,dmg为Mac客户端)"
-            
+
             green "======================================================================"
         else
             red "==================================="
@@ -594,48 +420,48 @@ function install_trojan() {
 }
 
 function repair_cert() {
-    
+
     systemctl stop nginx
-    
+
     Port80=$(netstat -tlpn | awk -F '[: ]+' '$1=="tcp"{print $5}' | grep -w 80)
-    
+
     if [ -n "$Port80" ]; then
-    
+
         process80=$(netstat -tlpn | awk -F '[: ]+' '$5=="80"{print $9}')
-    
+
         red "==========================================================="
         red "检测到80端口被占用, 占用进程为:${process80}, 本次安装结束"
         red "==========================================================="
-    
+
         exit 1
     fi
-    
+
     green "======================="
     blue "请输入绑定到本VPS的域名"
     blue "务必与之前失败使用的域名一致"
     green "======================="
-    
+
     read your_domain
-    
+
     real_addr=$(ping "${your_domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
     local_addr=$(curl ipv4.icanhazip.com)
-    
+
     if [ "$real_addr" == "$local_addr" ]; then
-    
+
         ~/.acme.sh/acme.sh --issue -d "$your_domain" --standalone
-    
+
         ~/.acme.sh/acme.sh --installcert -d "$your_domain" \
             --key-file /usr/src/trojan-cert/private.key \
             --fullchain-file /usr/src/trojan-cert/fullchain.cer
-    
+
         if test -s /usr/src/trojan-cert/fullchain.cer; then
-    
+
             green "证书申请成功"
             green "请将/usr/src/trojan-cert/下的fullchain.cer下载放到客户端trojan-cli-${your_domain}文件夹"
-    
+
             systemctl restart trojan
             systemctl start nginx
-    
+
         else
             red "申请证书失败"
         fi
@@ -648,26 +474,26 @@ function repair_cert() {
 }
 
 function remove_trojan() {
-    
+
     red "================================"
     red "即将卸载trojan"
     red "同时卸载安装的nginx"
     red "================================"
-    
+
     systemctl stop trojan
     systemctl disable trojan
-    
+
     rm -f "${systempwd}"trojan.service
-    
+
     if [ "$release" == "centos" ]; then
         yum remove -y nginx
     else
         apt autoremove -y nginx
     fi
-    
+
     rm -rf /usr/src/trojan*
     rm -rf /usr/share/nginx/html/*
-    
+
     green "=============="
     green "trojan删除完毕"
     green "=============="
@@ -678,9 +504,9 @@ function bbr_boost_sh() {
 }
 
 start_menu() {
-    
+
     clear
-    
+
     green " ===================================="
     green " Trojan 一键安装自动脚本 2020-2-27 更新      "
     green " 系统:centos7+/debian9+/ubuntu16.04+"
@@ -688,25 +514,25 @@ start_menu() {
     green " 此脚本为 atrandys 的, 波仔集成BBRPLUS加速及MAC客户端 "
     green " Youtube:波仔分享                "
     green " ===================================="
-    
+
     blue " 声明:"
     red " *请不要在任何生产环境使用此脚本"
     red " *请不要有其他程序占用80和443端口"
     red " *若是第二次使用脚本, 请先执行卸载trojan"
     green " ======================================="
-    
+
     echo
-    
+
     green " 1. 安装trojan"
     red " 2. 卸载trojan"
     green " 3. 修复证书"
     green " 4. 安装BBR-PLUS加速4合一脚本"
     blue " 0. 退出脚本"
-    
+
     echo
-    
+
     read -p "请输入数字:" num
-    
+
     case "$num" in
     1)
         install_trojan
@@ -725,11 +551,11 @@ start_menu() {
         ;;
     *)
         clear
-    
+
         red "请输入正确数字"
-    
+
         sleep 1s
-    
+
         start_menu
         ;;
     esac

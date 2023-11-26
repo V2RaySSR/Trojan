@@ -210,21 +210,21 @@ function check_system_support() {
 
 function gen_nginx_conf() {
     # replace "$domain_placeholder" with $your_domain in variable "nginx_conf" and write it to /etc/nginx/nginx.conf.
-    nginx_conf=$(echo "$nginx_conf" | sed "s/\${domain_placeholder}/$your_domain/g")
+    nginx_conf=$(echo "$nginx_conf" | sed "s/\$domain_placeholder/$your_domain/g")
     echo "$nginx_conf" >/etc/nginx/nginx.conf
 }
 
 #配置trojan mac
 function gen_trojan_conf_mac() {
     # replace "$domain_placeholder" with $your_domain, replace "$password_placeholder" with $trojan_passwd in variable "trojan_config_mac" and write it to /usr/src/trojan-macos/trojan/config.json.
-    trojan_config_mac=$(echo "$trojan_config_mac" | sed -e "s/\${domain_placeholder}/$your_domain/g" -e "s/\${password_placeholder}/$trojan_passwd/g")
+    trojan_config_mac=$(echo "$trojan_config_mac" | sed -e "s/\$domain_placeholder/$your_domain/g" -e "s/\$password_placeholder/$trojan_passwd/g")
     echo "$trojan_config_mac" >/usr/src/trojan-macos/trojan/config.json
 }
 
 # 配置trojan-cli 客户端
 function gen_trojan_conf_win() {
     # replace "$domain_placeholder" with $your_domain, replace "$password_placeholder" with $trojan_passwd in variable "trojan_config_win" and write it to /usr/src/trojan-cli/config.json.
-    trojan_config_win=$(echo "$trojan_config_win" | sed -e "s/\${domain_placeholder}/$your_domain/g" -e "s/\${password_placeholder}/$trojan_passwd/g")
+    trojan_config_win=$(echo "$trojan_config_win" | sed -e "s/\$domain_placeholder/$your_domain/g" -e "s/\$password_placeholder/$trojan_passwd/g")
     echo "$trojan_config_win" >/usr/src/trojan-cli/config.json
 }
 
@@ -234,7 +234,7 @@ function gen_trojan_conf_server() {
     rm -rf /usr/src/trojan/server.conf
 
     # replace "$password_placeholder" with $trojan_passwd in variable "trojan_server" and write it to /usr/src/trojan/server.conf.
-    trojan_server=$(echo "$trojan_server" | sed "s/\${password_placeholder}/$trojan_passwd/g")
+    trojan_server=$(echo "$trojan_server" | sed "s/\$password_placeholder/$trojan_passwd/g")
     echo "$trojan_server" >>/usr/src/trojan/server.conf
 }
 
@@ -242,7 +242,7 @@ function gen_trojan_conf_server() {
 function gen_clash_conf() {
 
     # replace "$domain_placeholder" with $your_domain, replace "$password_placeholder" with $trojan_passwd, replace "$vps_real_addr" with $real_addr in variable "clash_global_config" and write it to  /usr/src/trojan-cli/clash-global-config-${your_domain}.yaml
-    clash_global_config=$(echo "$clash_global_config" | sed -e "s/\${domain_placeholder}/$your_domain/g" -e "s/\${password_placeholder}/$trojan_passwd/g" -e "s/\${vps_real_addr}/$real_addr/g")
+    clash_global_config=$(echo "$clash_global_config" | sed -e "s/\$domain_placeholder/$your_domain/g" -e "s/\$password_placeholder/$trojan_passwd/g" -e "s/\$vps_real_addr/$real_addr/g")
     echo "$clash_global_config" >/usr/src/trojan-cli/clash-global-config-${your_domain}.yaml
 
 }
